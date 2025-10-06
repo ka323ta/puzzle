@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>15パズルゲーム</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+    background: #f0f0f0;
+  }
+  #puzzle {
+    display: grid;
+    grid-template-columns: repeat(4, 80px);
+    grid-template-rows: repeat(4, 80px);
+    gap: 5px;
+    justify-content: center;
+    margin: 20px auto;
+  }
+  .tile {
+    background: #4caf50;
+    color: white;
+    font-size: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    transition: background 0.3s;
+  }
+  .tile.empty {
+    background: transparent;
+    cursor: default;
+  }
+  .tile:hover:not(.empty) {
+    background: #45a049;
+  }
+  #message {
+    font-size: 1.2rem;
+    margin-top: 15px;
+    color: #333;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    background: #2196f3;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:hover {
+    background: #1976d2;
+  }
+</style>
+</head>
+<body>
+
+<h1>15パズルゲーム</h1>
+<div id="puzzle"></div>
+<div id="message"></div>
+<button id="shuffleBtn">シャッフル</button>
+
+<script>
+  const puzzle = document.getElementById('puzzle');
+  const message = document.getElementById('message');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+
+  // 4x4パズルのタイル配列（空白は0）
+  let tiles = [];
+  const size = 4;
+  let emptyIndex;
+
+  // 初期化関数
+  function init() {
+    tiles = [];
+    for (let i = 1; i <= size * size - 1; i++) {
+      tiles.push(i);
+    }
+    tiles.push(0); // 空白タイル
+    emptyIndex = tiles.length - 1;
+  }
+
+  // シャッフル関数（パズルが解ける配置になるようにする）
+  function shuffle() {
+    do {
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+    } while (!isSolvable() || isCompleted());
+    emptyIndex = tiles.indexOf(0);
+    render();
+    message.textContent = "パズルを解いてください！";
+  }
+
+  // パズルの表示更新
+  function render() {
+    puzzle.innerHTML = '';
+    tiles.forEach((num, i) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      if (num === 0) {
+        tile.classList.add('empty');
+      } else {
+        tile.textContent = num;
+        tile.addEventListener('click', () => {
+          moveTile(i);
+        });
+      }
+      puzzle.appendChild(tile);
+    });
+  }
+
+  // タイル移動処理
+  function moveTile(index) {
+    if (canMove(index)) {
+      [tiles[emptyIndex], tiles[index]] = [tiles[index], tiles[emptyIndex]];
+      emptyIndex = index;
+      render();
+      if (isCompleted()) {
+        message.textContent = "クリア！おめでとうございます🎉";
+      }
+    }
+  }
+
+  // 動かせるかどうか判定（空白と隣接しているか）
+  function canMove(index) {
+    const rowEmpty = Math.floor(emptyIndex / size);
+    const colEmpty = emptyIndex % size;
+    const rowTile = Math.floor(index / size);
+    const colTile = index % size;
+    return (
+      (rowEmpty === rowTile && Math.abs(colEmpty - colTile) === 1) ||
+      (colEmpty === colTile && Math.abs(rowEmpty - rowTile) === 1)
+    );
+  }
+
+  // 完成判定
+  function isCompleted() {
+    for (let i = 0; i < tiles.length - 1; i++) {
+      if (tiles[i] !== i + 1) {
+        return false;
+      }
+    }
+    return tiles[tiles.length - 1] === 0;
+  }
+
+  // パズルの解ける判定（偶置換数＋空白行の判定）
+  function isSolvable() {
+    let inversions = 0;
+    for (let i = 0; i < tiles.length; i++) {
+      for (let j = i + 1; j < tiles.length; j++) {
+        if (tiles[i] && tiles[j] && tiles[i] > tiles[j]) inversions++;
+      }
+    }
+    const emptyRowFromBottom = size - Math.floor(tiles.indexOf(0) / size);
+    if (size % 2 === 1) {
+      return inversions % 2 === 0;
+    } else {
+      if (emptyRowFromBottom % 2 === 0) {
+        return inversions % 2 === 1;
+      } else {
+        return inversions % 2 === 0;
+      }
+    }
+  }
+
+  shuffleBtn.addEventListener('click', shuffle);
+
+  init();
+  shuffle();
+</script>
+
+</body>
+</html>
